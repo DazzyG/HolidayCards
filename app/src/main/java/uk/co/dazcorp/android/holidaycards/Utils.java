@@ -1,5 +1,8 @@
 package uk.co.dazcorp.android.holidaycards;
 
+import org.joda.time.Days;
+import org.joda.time.LocalDate;
+
 import android.content.Context;
 
 import java.io.IOException;
@@ -25,5 +28,13 @@ public class Utils {
             return null;
         }
         return json;
+    }
+
+
+    public static int daysToGo(long date){
+        LocalDate toDate = new LocalDate(date);
+        LocalDate fromDate = LocalDate.now();
+
+        return Days.daysBetween(fromDate, toDate).getDays();
     }
 }

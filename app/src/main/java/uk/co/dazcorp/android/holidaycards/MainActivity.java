@@ -8,6 +8,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import retrofit.Callback;
 import retrofit.MockRestAdapter;
 import retrofit.RestAdapter;
@@ -15,6 +18,7 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 import uk.co.dazcorp.android.holidaycards.api.HolidayInterface;
 import uk.co.dazcorp.android.holidaycards.data.Holiday;
+import uk.co.dazcorp.android.holidaycards.data.Photo;
 
 
 public class MainActivity extends Activity {
@@ -23,6 +27,8 @@ public class MainActivity extends Activity {
     private RestAdapter mRestAdapter;
     private HolidayInterface mHolidaysInterface;
     private Holiday mHoliday;
+    private PhotoAdapter mPhotoAdapter;
+    private CardContainer mPhotoContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +42,12 @@ public class MainActivity extends Activity {
         mHolidaysInterface = mockRestAdapter.create(HolidayInterface.class, mockHolidays);
 
         mHolidaysInterface.getHoliday(new HolidayCallback());
+
+        mPhotoAdapter = new PhotoAdapter(this, 0, new ArrayList<Photo>());
+
+        mPhotoContainer = (CardContainer) findViewById(R.id.photo_container);
+
+        mPhotoContainer.setAdapter(mPhotoAdapter);
     }
 
     @Override
@@ -76,7 +88,10 @@ public class MainActivity extends Activity {
         @Override
         public void success(Holiday holiday, Response response) {
             mHoliday = holiday;
-            Toast.makeText(MainActivity.this, mHoliday.toString(), Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, mHoliday.toString(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "Days to go: " + ""+Utils.daysToGo(mHoliday.date), Toast.LENGTH_LONG).show();
+            mPhotoAdapter.clear();
+            mPhotoAdapter.addAll(Arrays.asList(mHoliday.photos));
         }
 
         @Override
