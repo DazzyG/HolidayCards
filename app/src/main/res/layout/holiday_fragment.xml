@@ -1,0 +1,76 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+    <view
+        android:id="@+id/photo_container"
+        class="uk.co.dazcorp.android.holidaycards.CardContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        app:orientation="disordered" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:background="@drawable/holiday_details_background"
+        android:paddingTop="50dp">
+
+        <TextView
+            android:id="@+id/location_textview_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:text="Greece" />
+
+        <TextView
+            android:id="@+id/temp_textview_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/location_textview_value"
+            android:drawableEnd="@drawable/temperature_celsius"
+            android:gravity="center"
+            android:text="34" />
+
+        <ImageView
+            android:id="@+id/temp_icon_imageview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/temp_textview_value"
+            android:layout_toRightOf="@+id/temp_textview_value"
+            android:src="@drawable/weather_sunny"
+            android:tint="@android:color/holo_orange_dark" />
+
+        <TextView
+            android:id="@+id/counter_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerInParent="true"
+            android:text="1 of 2" />
+
+        <TextView
+            android:id="@+id/days_textview_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:text="Days to go" />
+
+        <TextView
+            android:id="@+id/days_textview_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_below="@+id/days_textview_label"
+            android:text="120" />
+
+    </RelativeLayout>
+
+</RelativeLayout>

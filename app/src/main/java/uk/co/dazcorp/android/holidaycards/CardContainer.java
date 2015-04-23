@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
@@ -29,12 +30,19 @@ import java.util.Random;
 /**
  * Created by kikoso https://github.com/kikoso/Swipeable-Cards/
  * Modified by gentd on 22/04/2015.
+ *
+ * Now displays a list of cards that repeats
+ * This is accomplished by animating the removed card to the back of the stack
  */
 public class CardContainer extends AdapterView<ListAdapter> {
+
+    public interface CardChangedListener {
+        void onCurrentCardChanged(int currentCard);
+    }
+
     public static final int INVALID_POINTER_ID = -1;
     private int mActivePointerId = INVALID_POINTER_ID;
     private static final double DISORDERED_MAX_ROTATION_RADIANS = Math.PI / 64;
-    private int mNumberOfCards = -1;
     private final DataSetObserver mDataSetObserver = new DataSetObserver() {
         @Override
         public void onChanged() {
@@ -59,6 +67,7 @@ public class CardContainer extends AdapterView<ListAdapter> {
     private int mMaxVisible = 10;
     private GestureDetector mGestureDetector;
     private int mFlingSlop;
+    private Orientations.Orientation mOrientation;
     private ListAdapter mListAdapter;
     private float mLastTouchX;
     private float mLastTouchY;
@@ -67,10 +76,13 @@ public class CardContainer extends AdapterView<ListAdapter> {
     private int mGravity;
     private int mNextAdapterPosition;
     private boolean mDragging;
+    private CardChangedListener mCardChangedListener;
+
 
     public CardContainer(Context context) {
         super(context);
 
+        setOrientation(Orientations.Orientation.Disordered);
         setGravity(Gravity.CENTER);
         init();
 
@@ -101,8 +113,19 @@ public class CardContainer extends AdapterView<ListAdapter> {
                 R.styleable.CardContainer);
 
         setGravity(a.getInteger(R.styleable.CardContainer_android_gravity, Gravity.CENTER));
+        int orientation = a.getInteger(R.styleable.CardContainer_orientation, 1);
+        setOrientation(Orientations.Orientation.fromIndex(orientation));
 
         a.recycle();
+    }
+
+    public CardChangedListener getCardChangedListener() {
+        return mCardChangedListener;
+    }
+
+    public void setCardChangedListener(
+            CardChangedListener cardChangedListener) {
+        mCardChangedListener = cardChangedListener;
     }
 
     @Override
@@ -127,7 +150,6 @@ public class CardContainer extends AdapterView<ListAdapter> {
             mTopCard = getChildAt(getChildCount() - 1);
             mTopCard.setLayerType(LAYER_TYPE_HARDWARE, null);
         }
-        mNumberOfCards = getAdapter().getCount();
         requestLayout();
     }
 
@@ -135,11 +157,14 @@ public class CardContainer extends AdapterView<ListAdapter> {
         while (mNextAdapterPosition < mListAdapter.getCount() && getChildCount() < mMaxVisible) {
             View view = mListAdapter.getView(mNextAdapterPosition, null, this);
             view.setLayerType(LAYER_TYPE_SOFTWARE, null);
+            if(mOrientation == Orientations.Orientation.Disordered) {
+                view.setRotation(getDisorderedRotation());
+            }
             addViewInLayout(view, 0, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
                     mListAdapter.getItemViewType(mNextAdapterPosition)), false);
 
             requestLayout();
-
+            view.setTag(mNextAdapterPosition);
             mNextAdapterPosition += 1;
         }
     }
@@ -150,6 +175,36 @@ public class CardContainer extends AdapterView<ListAdapter> {
         mTopCard = null;
     }
 
+    public Orientations.Orientation getOrientation() {
+        return mOrientation;
+    }
+
+    public void setOrientation(Orientations.Orientation orientation) {
+        if (orientation == null)
+            throw new NullPointerException("Orientation may not be null");
+        if(mOrientation != orientation) {
+            this.mOrientation = orientation;
+            if(orientation == Orientations.Orientation.Disordered) {
+                for (int i = 0; i < getChildCount(); i++) {
+                    View child = getChildAt(i);
+                    child.setRotation(getDisorderedRotation());
+                }
+            }
+            else {
+                for (int i = 0; i < getChildCount(); i++) {
+                    View child = getChildAt(i);
+                    child.setRotation(0);
+                }
+            }
+            requestLayout();
+        }
+
+    }
+
+    private float getDisorderedRotation() {
+        return (float) Math.toDegrees(mRandom.nextGaussian() * DISORDERED_MAX_ROTATION_RADIANS);
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -158,8 +213,22 @@ public class CardContainer extends AdapterView<ListAdapter> {
         int requestedHeight = getMeasuredHeight() - getPaddingTop() - getPaddingBottom();
         int childWidth, childHeight;
 
+        if (mOrientation == Orientations.Orientation.Disordered) {
+
+            int R1, R2;
+            if (requestedWidth >= requestedHeight) {
+                R1 = requestedHeight;
+                R2 = requestedWidth;
+            } else {
+                R1 = requestedWidth;
+                R2 = requestedHeight;
+            }
+            childWidth = (int) ((R1 * Math.cos(DISORDERED_MAX_ROTATION_RADIANS) - R2 * Math.sin(DISORDERED_MAX_ROTATION_RADIANS)) / Math.cos(2 * DISORDERED_MAX_ROTATION_RADIANS));
+            childHeight = (int) ((R2 * Math.cos(DISORDERED_MAX_ROTATION_RADIANS) - R1 * Math.sin(DISORDERED_MAX_ROTATION_RADIANS)) / Math.cos(2 * DISORDERED_MAX_ROTATION_RADIANS));
+        } else {
             childWidth = requestedWidth;
             childHeight = requestedHeight;
+        }
 
         int childWidthMeasureSpec, childHeightMeasureSpec;
         childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(childWidth, MeasureSpec.AT_MOST);
@@ -293,7 +362,6 @@ public class CardContainer extends AdapterView<ListAdapter> {
         }
         final int pointerIndex;
         final float x, y;
-        final float dx, dy;
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 mTopCard.getHitRect(childRect);
@@ -337,10 +405,6 @@ public class CardContainer extends AdapterView<ListAdapter> {
         throw new UnsupportedOperationException();
     }
 
-    public int getGravity() {
-        return mGravity;
-    }
-
     public void setGravity(int gravity) {
         mGravity = gravity;
     }
@@ -348,18 +412,6 @@ public class CardContainer extends AdapterView<ListAdapter> {
     public static class LayoutParams extends ViewGroup.LayoutParams {
 
         int viewType;
-
-        public LayoutParams(Context c, AttributeSet attrs) {
-            super(c, attrs);
-        }
-
-        public LayoutParams(int width, int height) {
-            super(width, height);
-        }
-
-        public LayoutParams(ViewGroup.LayoutParams source) {
-            super(source);
-        }
 
         public LayoutParams(int w, int h, int viewType) {
             super(w, h);
@@ -395,6 +447,7 @@ public class CardContainer extends AdapterView<ListAdapter> {
                 if(mTopCard != null)
                     mTopCard.setLayerType(LAYER_TYPE_HARDWARE, null);
 
+                // Animate the card to the back of the stack
 
                 topCard.animate()
                         .setDuration(duration)
@@ -406,8 +459,25 @@ public class CardContainer extends AdapterView<ListAdapter> {
                         .setListener(new AnimatorListenerAdapter() {
                             @Override
                             public void onAnimationEnd(Animator animation) {
-                                removeViewInLayout(topCard);
-                                ensureFull();
+                                if(mCardChangedListener != null) {
+                                    mCardChangedListener.onCurrentCardChanged(
+                                            (Integer) mTopCard.getTag());
+                                }
+
+                                for (int i = 0; i <= getChildCount() - 2; i++) {
+                                    getChildAt(0).bringToFront();
+                                }
+
+                                ValueAnimator animator = ObjectAnimator.ofPropertyValuesHolder(topCard,
+                                        PropertyValuesHolder.ofFloat("translationX", 0),
+                                        PropertyValuesHolder.ofFloat("translationY", 0),
+                                        PropertyValuesHolder.ofFloat("rotation", (float) Math.toDegrees(mRandom.nextGaussian() * DISORDERED_MAX_ROTATION_RADIANS)),
+                                        PropertyValuesHolder.ofFloat("pivotX", topCard.getWidth() / 2.f),
+                                        PropertyValuesHolder.ofFloat("pivotY", topCard.getHeight() / 2.f),
+                                        PropertyValuesHolder.ofFloat("alpha", 1f)
+                                ).setDuration(250);
+                                animator.setInterpolator(new DecelerateInterpolator());
+                                animator.start();
                             }
 
                             @Override
