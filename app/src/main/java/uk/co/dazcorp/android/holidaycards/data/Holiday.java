@@ -1,5 +1,7 @@
 package uk.co.dazcorp.android.holidaycards.data;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 
 /**
@@ -13,6 +15,7 @@ public class Holiday {
 
     public Photo[] photos;
 
+    @NotNull
     @Override
     public String toString() {
         return "Holiday{" +

@@ -1,27 +1,27 @@
 package uk.co.dazcorp.android.holidaycards;
 
-import com.google.gson.GsonBuilder;
-
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.v4.widget.ContentLoadingProgressBar;
+import androidx.core.widget.ContentLoadingProgressBar;
+
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import retrofit.Callback;
-import retrofit.MockRestAdapter;
-import retrofit.RestAdapter;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
+import org.jetbrains.annotations.NotNull;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 import uk.co.dazcorp.android.holidaycards.api.HolidayInterface;
 import uk.co.dazcorp.android.holidaycards.data.Holiday;
 
 
 public class MainActivity extends Activity {
 
-
-    private RestAdapter mRestAdapter;
     private HolidayInterface mHolidaysInterface;
 
     private ContentLoadingProgressBar mLoading;
@@ -31,13 +31,15 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mRestAdapter = new RestAdapter.Builder().setEndpoint("http://mock.end.point").build();
-        MockRestAdapter mockRestAdapter = MockRestAdapter.from(mRestAdapter);
-        MockHolidaysInterface mockHolidays = new MockHolidaysInterface();
 
-        mHolidaysInterface = mockRestAdapter.create(HolidayInterface.class, mockHolidays);
-        mHolidaysInterface.getHoliday(new HolidayCallback());
-        mLoading = (ContentLoadingProgressBar) findViewById(R.id.loading_view);
+        mHolidaysInterface = new Retrofit.Builder()
+                .baseUrl("https://my-json-server.typicode.com/DazzyG/HolidayCards/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(HolidayInterface.class);
+
+        mHolidaysInterface.getHolidays().enqueue(new HolidayCallback());
+        mLoading = findViewById(R.id.loading_view);
         mLoading.show();
 
     }
@@ -64,29 +66,23 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    class MockHolidaysInterface implements HolidayInterface {
+    class HolidayCallback implements Callback<Holiday[]> {
 
         @Override
-        public void getHoliday(Callback<Holiday> callback) {
-            Holiday holiday = new GsonBuilder().create()
-                    .fromJson(Utils.loadJSONFromAsset(MainActivity.this, "holidays.json"), Holiday.class);
-            
-            callback.success(holiday, null);
-        }
-    }
-
-    class HolidayCallback implements Callback<Holiday> {
-
-        @Override
-        public void success(Holiday holiday, Response response) {
-            HolidayFragment mHolidayFragment = HolidayFragment.newInstance(holiday);
+        public void onResponse(@NotNull Call<Holiday[]> call, Response<Holiday[]> response) {
+            HolidayFragment mHolidayFragment = null;
+            Holiday[] body = response.body();
+            if (body != null) {
+                mHolidayFragment = HolidayFragment.newInstance(body[0]);
+            }
             getFragmentManager().beginTransaction().add(R.id.fragment_container, mHolidayFragment, "holiday").commit();
             mLoading.hide();
         }
 
         @Override
-        public void failure(RetrofitError error) {
+        public void onFailure(@NotNull Call<Holiday[]> call, @NotNull Throwable t) {
             // TODO: Error Handling
+            Log.e("HOLIDAYCARDS", "Error", t);
             Toast.makeText(MainActivity.this, "Error", Toast.LENGTH_LONG).show();
             mLoading.hide();
         }

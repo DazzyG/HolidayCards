@@ -1,8 +1,5 @@
 package uk.co.dazcorp.android.holidaycards;
 
-import org.joda.time.Days;
-import org.joda.time.LocalDate;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.renderscript.Allocation;
@@ -13,6 +10,11 @@ import android.view.View;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Created by gentd on 21/04/2015.
@@ -28,7 +30,7 @@ public class Utils {
             byte[] buffer = new byte[size];
             is.read(buffer);
             is.close();
-            json = new String(buffer, "UTF-8");
+            json = new String(buffer, StandardCharsets.UTF_8);
         } catch (IOException ex) {
             ex.printStackTrace();
             return null;
@@ -38,10 +40,10 @@ public class Utils {
 
 
     public static int daysToGo(long date) {
-        LocalDate toDate = new LocalDate(date);
+        LocalDate toDate = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate();
         LocalDate fromDate = LocalDate.now();
 
-        return Days.daysBetween(fromDate, toDate).getDays();
+        return (int) ChronoUnit.DAYS.between(fromDate, toDate);
     }
 
     /**

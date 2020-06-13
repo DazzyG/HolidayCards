@@ -9,6 +9,8 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 import uk.co.dazcorp.android.holidaycards.data.Photo;
@@ -23,8 +25,9 @@ public class PhotoAdapter extends ArrayAdapter<Photo> {
         super(context, resource, objects);
     }
 
+    @NotNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View convertView, @NotNull ViewGroup parent) {
         Photo photo = getItem(position);
         ViewHolder holder;
 
@@ -37,7 +40,7 @@ public class PhotoAdapter extends ArrayAdapter<Photo> {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        Picasso.with(getContext()).load(photo.url).into(holder.photo);
+        Picasso.get().load(photo.url).into(holder.photo);
 
         return convertView;
     }

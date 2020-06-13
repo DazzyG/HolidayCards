@@ -108,7 +108,7 @@ public class HolidayFragment extends Fragment implements CardContainer.CardChang
 
     private void updateIndex(final int currentCard) {
         mPhotoIndex.setText(currentCard + 1 + " of " + mPhotoAdapter.getCount());
-        Picasso.with(getActivity()).load(mPhotoAdapter.getItem(currentCard).url).into(mBackgroundImageTarget);
+        Picasso.get().load(mPhotoAdapter.getItem(currentCard).url).into(mBackgroundImageTarget);
     }
 
 
@@ -128,7 +128,7 @@ public class HolidayFragment extends Fragment implements CardContainer.CardChang
 
     @Override
     public void onCurrentCardChanged(int currentCard) {
-        Picasso.with(getActivity()).cancelRequest(mBackgroundImageTarget);
+        Picasso.get().cancelRequest(mBackgroundImageTarget);
         updateIndex(currentCard);
     }
 
@@ -141,7 +141,7 @@ public class HolidayFragment extends Fragment implements CardContainer.CardChang
         }
 
         @Override
-        public void onBitmapFailed(Drawable errorDrawable) {
+        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
 
         }
 

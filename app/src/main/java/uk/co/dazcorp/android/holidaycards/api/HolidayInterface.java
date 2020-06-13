@@ -1,7 +1,8 @@
 package uk.co.dazcorp.android.holidaycards.api;
 
-import retrofit.Callback;
-import retrofit.http.GET;
+
+import retrofit2.Call;
+import retrofit2.http.GET;
 import uk.co.dazcorp.android.holidaycards.data.Holiday;
 
 /**
@@ -9,7 +10,7 @@ import uk.co.dazcorp.android.holidaycards.data.Holiday;
  */
 public interface HolidayInterface {
 
-    @GET("/")
-    void getHoliday(Callback<Holiday> callback);
+    @GET("holidays")
+    Call<Holiday[]> getHolidays();
 
 }
